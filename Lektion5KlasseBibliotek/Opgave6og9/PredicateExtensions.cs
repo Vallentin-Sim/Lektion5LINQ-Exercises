@@ -11,10 +11,7 @@ namespace Lektion5KlasseBibliotek.Opgave6
         {
             foreach (var person in lst)
             {
-                if (predicate(person))
-                {
-                    person.Accepted = true;
-                }
+                person.Accepted = predicate(person);
             }
         }
 

@@ -152,15 +152,39 @@ IEnumerable<int> uniqueUneven100Numbers = uneven100Numbers.Distinct();
 
 // Opgave 11. Brug LINQ til at gruppere alle personerne efter først bogstav I deres navn, 
 //              Anders og Anita skal være i samme gruppe, og Bent og Bo skal være i samme gruppe.
+// Løsningen med IGrouping<char, Person> er mere effektiv end at bruge Person[] fordi den har en lavere konstant køretid.
+// Ifølge Big O notation, er køretiden stortset den samme, men konstanten er lavere, hvilket kunne betyde i en database
+//      at det ville tage længere tid at hente dataene, hvis man bruger Person[] i stedet for IGrouping<char, Person>.
 
+/* Runtime: O(n + n log n + n)
+ * GroupBy() - Groups the elements of a sequence according to a specified key selector function.
+ * OrderBy() - Sorts the elements of a sequence in ascending order according to a key.
+ * Select() - Projects each element of a sequence into a new form.
+ */
 IEnumerable<Person[]> personGrupperingslist = 
     persons.GroupBy(p => p.Name[0])
     .OrderBy(g => g.Key)
     .Select(g => g.ToArray());
 
-foreach (var gruppe in personGrupperingslist)
+// Runtime: O(n + n log n)
+IEnumerable<IGrouping<char, Person>> personGrupper =
+    persons
+        .GroupBy(p => p.Name[0])
+        .OrderBy(g => g.Key);  
+
+//foreach (var gruppe in personGrupperingslist)
+//{
+//    Console.WriteLine("Group: " + gruppe[0].Name[0]);
+//    foreach (var p in gruppe)
+//    {
+//        Console.WriteLine(p);
+//    }
+//    Console.WriteLine();
+//}
+
+foreach (var gruppe in personGrupper)
 {
-    Console.WriteLine("Group: " + gruppe[0].Name[0]);
+    Console.WriteLine("Group: " + gruppe.Key);
     foreach (var p in gruppe)
     {
         Console.WriteLine(p);
@@ -176,3 +200,25 @@ List<Person> persons2 = Person.ReadCSVFile("C:\\Users\\svall\\source\\repos\\Lek
 persons.Join(persons2, p1 => p1.Name, p2 => p2.Name, (p1, p2) => new { Person1 = p1, Person2 = p2 })
     .ToList()
     .ForEach(joined => Console.WriteLine($"Match found: {joined.Person1} and {joined.Person2}"));
+
+// Alternativ version: Runtime: O(n+m+r) hvor n er antallet af personer i persons,
+//      m er antallet af personer i persons2, og r er antallet af matches fra join.
+// Denne version undgår at materialisere join-resultatet i en List,
+// da resultatet kun skal gennemløbes én gang og udskrives.
+// Det giver mindre unødvendig memory-allokering og gør intentionen tydeligere.
+
+var joinedPersons = persons.Join(
+    persons2,
+    p1 => p1.Name,
+    p2 => p2.Name,
+    (p1, p2) => new
+    {
+        Person1 = p1,
+        Person2 = p2
+    });
+
+foreach (var joined in joinedPersons)
+{
+    Console.WriteLine(
+        $"Match found: {joined.Person1} and {joined.Person2}");
+}
